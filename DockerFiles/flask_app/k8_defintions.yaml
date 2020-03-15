@@ -1,0 +1,54 @@
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    flask-app: flask-app
+  name: flask-app-svc
+  namespace: flask
+spec:
+  ports:
+    - port: 38080
+      targetPort: 5000
+  selector:
+    flask-app: flask-app
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    flask-app: flask-app
+  name: flask-app
+  namespace: flask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      flask-app: flask-app
+  template:
+    metadata:
+      labels:
+        flask-app: flask-app
+    spec:
+      containers:
+        - name: flask-app
+          image: smuthunoori/flask_env:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              protocol: TCP
+          volumeMounts:
+              # Create on-disk volume to store exec logs
+            - mountPath: /tmp
+              name: tmp-volume
+          livenessProbe:
+            httpGet:
+              scheme: HTTP
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}
